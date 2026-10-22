@@ -36,5 +36,4 @@ func (s *UsersService) PatchUser(
 	}
 
 	return patchedUser, nil
-
 }

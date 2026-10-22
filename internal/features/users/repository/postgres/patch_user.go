@@ -7,7 +7,7 @@ import (
 
 	"github.com/MisdGhost17/golang-todoapp/internal/core/domain"
 	core_errors "github.com/MisdGhost17/golang-todoapp/internal/core/errors"
-	"github.com/jackc/pgx/v5"
+	core_postgres_pool "github.com/MisdGhost17/golang-todoapp/internal/core/repository/postgres/pool"
 )
 
 func (r *UsersRepository) PatchUser(
@@ -50,7 +50,7 @@ func (r *UsersRepository) PatchUser(
 	)
 
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
+		if errors.Is(err, core_postgres_pool.ErrNoRows) {
 			return domain.User{}, fmt.Errorf("user with id='%d' concuretly accessed: %w",
 				id, core_errors.ErrConflict)
 		}

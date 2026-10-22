@@ -6,7 +6,7 @@ type Middleware func(http.Handler) http.Handler
 
 func ChainMiddleware(
 	h http.Handler,
-	m []Middleware,
+	m ...Middleware,
 ) http.Handler {
 	if len(m) == 0 {
 		return h
