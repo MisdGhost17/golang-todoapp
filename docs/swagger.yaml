@@ -1,0 +1,633 @@
+basePath: /api/v1
+definitions:
+  github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse:
+    properties:
+      error:
+        example: full error text
+        type: string
+      message:
+        type: string
+    type: object
+  internal_features_statistics_transport_http.GetStatisticsResponse:
+    properties:
+      tasks_average_completion_time:
+        example: 1h30m0s
+        type: string
+      tasks_completed:
+        example: 15
+        type: integer
+      tasks_completed_rate:
+        example: 75
+        type: number
+      tasks_created:
+        example: 20
+        type: integer
+    type: object
+  internal_features_tasks_transport_http.CreateTaskRequest:
+    properties:
+      author_user_id:
+        example: 7
+        type: integer
+      description:
+        example: Молоко и хлеб
+        maxLength: 1000
+        minLength: 1
+        type: string
+      title:
+        example: Купить продукты
+        maxLength: 100
+        minLength: 1
+        type: string
+    required:
+    - author_user_id
+    - title
+    type: object
+  internal_features_tasks_transport_http.CreateTaskResponse:
+    properties:
+      author_user_id:
+        example: 7
+        type: integer
+      completed:
+        example: true
+        type: boolean
+      completed_at:
+        example: "2026-10-27T10:30:00Z"
+        type: string
+      created_at:
+        example: "2026-10-27T09:00:00Z"
+        type: string
+      description:
+        example: Молоко и хлеб
+        type: string
+      id:
+        example: 12
+        type: integer
+      title:
+        example: Купить продукты
+        type: string
+      version:
+        example: 2
+        type: integer
+    type: object
+  internal_features_tasks_transport_http.GetTaskResponse:
+    properties:
+      author_user_id:
+        example: 7
+        type: integer
+      completed:
+        example: true
+        type: boolean
+      completed_at:
+        example: "2026-10-27T10:30:00Z"
+        type: string
+      created_at:
+        example: "2026-10-27T09:00:00Z"
+        type: string
+      description:
+        example: Молоко и хлеб
+        type: string
+      id:
+        example: 12
+        type: integer
+      title:
+        example: Купить продукты
+        type: string
+      version:
+        example: 2
+        type: integer
+    type: object
+  internal_features_tasks_transport_http.PatchTaskRequest:
+    properties:
+      completed:
+        example: true
+        type: boolean
+      description:
+        example: Молоко и хлеб
+        type: string
+      title:
+        example: Купить продукты
+        type: string
+    type: object
+  internal_features_tasks_transport_http.PatchTaskResponse:
+    properties:
+      author_user_id:
+        example: 7
+        type: integer
+      completed:
+        example: true
+        type: boolean
+      completed_at:
+        example: "2026-10-27T10:30:00Z"
+        type: string
+      created_at:
+        example: "2026-10-27T09:00:00Z"
+        type: string
+      description:
+        example: Молоко и хлеб
+        type: string
+      id:
+        example: 12
+        type: integer
+      title:
+        example: Купить продукты
+        type: string
+      version:
+        example: 2
+        type: integer
+    type: object
+  internal_features_tasks_transport_http.TaskDTOResponse:
+    properties:
+      author_user_id:
+        example: 7
+        type: integer
+      completed:
+        example: true
+        type: boolean
+      completed_at:
+        example: "2026-10-27T10:30:00Z"
+        type: string
+      created_at:
+        example: "2026-10-27T09:00:00Z"
+        type: string
+      description:
+        example: Молоко и хлеб
+        type: string
+      id:
+        example: 12
+        type: integer
+      title:
+        example: Купить продукты
+        type: string
+      version:
+        example: 2
+        type: integer
+    type: object
+  internal_features_users_transport_http.CreateUserRequest:
+    properties:
+      full_name:
+        example: Peter Parker
+        maxLength: 100
+        minLength: 3
+        type: string
+      phone_number:
+        example: "+79998887766"
+        maxLength: 15
+        minLength: 10
+        type: string
+    required:
+    - full_name
+    type: object
+  internal_features_users_transport_http.CreateUserResponse:
+    properties:
+      full_name:
+        example: Ivan Petrov
+        type: string
+      id:
+        example: 7
+        type: integer
+      phone_number:
+        example: "+79875554433"
+        type: string
+      version:
+        example: 3
+        type: integer
+    type: object
+  internal_features_users_transport_http.GetUserResponse:
+    properties:
+      full_name:
+        example: Ivan Petrov
+        type: string
+      id:
+        example: 7
+        type: integer
+      phone_number:
+        example: "+79875554433"
+        type: string
+      version:
+        example: 3
+        type: integer
+    type: object
+  internal_features_users_transport_http.PatchUserRequest:
+    properties:
+      full_name:
+        example: Peter Parker
+        type: string
+      phone_number:
+        example: "+79998887766"
+        type: string
+    type: object
+  internal_features_users_transport_http.PatchUserResponse:
+    properties:
+      full_name:
+        example: Ivan Petrov
+        type: string
+      id:
+        example: 7
+        type: integer
+      phone_number:
+        example: "+79875554433"
+        type: string
+      version:
+        example: 3
+        type: integer
+    type: object
+  internal_features_users_transport_http.UserDTOResponse:
+    properties:
+      full_name:
+        example: Ivan Petrov
+        type: string
+      id:
+        example: 7
+        type: integer
+      phone_number:
+        example: "+79875554433"
+        type: string
+      version:
+        example: 3
+        type: integer
+    type: object
+host: 127.0.0.1:5050
+info:
+  contact: {}
+  description: ToDo Application REST API
+  title: Golang ToDo API
+  version: "1.0"
+paths:
+  /statistics:
+    get:
+      description: Получение статистики задач с опциональными фильтрами по пользователю
+        и периоду.
+      parameters:
+      - description: ID пользователя
+        in: query
+        name: user_id
+        type: integer
+      - description: Начало периода в формате YYYY-MM-DD
+        format: date
+        in: query
+        name: from
+        type: string
+      - description: Конец периода в формате YYYY-MM-DD
+        format: date
+        in: query
+        name: to
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Статистика задач
+          schema:
+            $ref: '#/definitions/internal_features_statistics_transport_http.GetStatisticsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+      summary: Получение статистики задач
+      tags:
+      - statistics
+  /tasks:
+    get:
+      description: Получение списка задач с опциональной фильтрацией по автору и пагинацией.
+      parameters:
+      - description: ID автора задач
+        in: query
+        name: user_id
+        type: integer
+      - description: Максимальное количество задач
+        in: query
+        minimum: 0
+        name: limit
+        type: integer
+      - description: Количество пропускаемых задач
+        in: query
+        minimum: 0
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список задач
+          schema:
+            items:
+              $ref: '#/definitions/internal_features_tasks_transport_http.TaskDTOResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+      summary: Получение списка задач
+      tags:
+      - tasks
+    post:
+      consumes:
+      - application/json
+      description: Создание задачи для существующего пользователя.
+      parameters:
+      - description: Данные новой задачи
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_features_tasks_transport_http.CreateTaskRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Задача успешно создана
+          schema:
+            $ref: '#/definitions/internal_features_tasks_transport_http.CreateTaskResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+        "404":
+          description: Author User Not Found
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+      summary: Создание задачи
+      tags:
+      - tasks
+  /tasks/{id}:
+    delete:
+      description: Удаление существующей задачи по её ID.
+      parameters:
+      - description: ID удаляемой задачи
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Задача успешно удалена
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+        "404":
+          description: Task Not Found
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+      summary: Удаление задачи
+      tags:
+      - tasks
+    get:
+      description: Получение задачи по её ID.
+      parameters:
+      - description: ID задачи
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Задача успешно найдена
+          schema:
+            $ref: '#/definitions/internal_features_tasks_transport_http.GetTaskResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+        "404":
+          description: Task Not Found
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+      summary: Получение задачи
+      tags:
+      - tasks
+    patch:
+      consumes:
+      - application/json
+      description: |-
+        Частичное изменение задачи по её ID. Непереданные поля сохраняют текущие значения.
+        Поле description допускает null для удаления описания. Поля title и completed не допускают null.
+        Длина title: от 1 до 100 символов; description: от 1 до 1000 символов, если передана строка.
+      parameters:
+      - description: ID изменяемой задачи
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Изменяемые поля задачи
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_features_tasks_transport_http.PatchTaskRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Задача успешно изменена
+          schema:
+            $ref: '#/definitions/internal_features_tasks_transport_http.PatchTaskResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+        "404":
+          description: Task Not Found
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+      summary: Изменение задачи
+      tags:
+      - tasks
+  /users:
+    get:
+      description: Получение списка пользователей с опциональной пагинацией
+      parameters:
+      - description: Размер страницы с пользователями
+        in: query
+        name: limit
+        type: integer
+      - description: Смещение страницы с пользователями
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешное получение списка пользователей
+          schema:
+            items:
+              $ref: '#/definitions/internal_features_users_transport_http.UserDTOResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+      summary: Получение пользователей
+      tags:
+      - users
+    post:
+      consumes:
+      - application/json
+      description: Создать нового пользователя в системе
+      parameters:
+      - description: CreateUser тело запроса
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_features_users_transport_http.CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Успешно созданный пользователь
+          schema:
+            $ref: '#/definitions/internal_features_users_transport_http.CreateUserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+      summary: Создать пользователя
+      tags:
+      - users
+  /users/{id}:
+    delete:
+      description: Удалить существующего пользователя по id
+      parameters:
+      - description: ID удаляемого пользователя
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: Успешное удаление пользователя
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+        "404":
+          description: User Not Found
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+      summary: Удаление пользователя
+      tags:
+      - users
+    get:
+      description: Получение конкрентного пользователя по его ID
+      parameters:
+      - description: ID пользователя
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Пользователь успешно найден
+          schema:
+            $ref: '#/definitions/internal_features_users_transport_http.GetUserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+        "404":
+          description: User Not Found
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+      summary: Получение пользователя
+      tags:
+      - users
+    patch:
+      consumes:
+      - application/json
+      description: |-
+        Изменение пользователя по ID
+        ### Логика обновления полей (Three-state logic):
+        1. **Поле не передано**: `phone_number` игнорируется, значение в БД не изменяется
+        2. **Явно передано значение**: `phone_number` значение в БД изменяется
+        3. **Передан null**: `phone_number` значение в БД изменяется на NULL
+      parameters:
+      - description: ID изменяемого пользователя
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: PatchUser тело запроса
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_features_users_transport_http.PatchUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешно измененный пользователь
+          schema:
+            $ref: '#/definitions/internal_features_users_transport_http.PatchUserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+        "404":
+          description: User Not Found
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+      summary: Изменение пользователя
+      tags:
+      - users
+swagger: "2.0"

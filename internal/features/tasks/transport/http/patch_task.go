@@ -12,9 +12,9 @@ import (
 )
 
 type PatchTaskRequest struct {
-	Title       core_http_types.Nullable[string] `json:"title"`
-	Description core_http_types.Nullable[string] `json:"description"`
-	Completed   core_http_types.Nullable[bool]   `json:"completed"`
+	Title       core_http_types.Nullable[string] `json:"title" swaggertype:"string" example:"Купить продукты"`
+	Description core_http_types.Nullable[string] `json:"description" swaggertype:"string" example:"Молоко и хлеб"`
+	Completed   core_http_types.Nullable[bool]   `json:"completed" swaggertype:"boolean" example:"true"`
 }
 
 type PatchTaskResponse TaskDTOResponse
@@ -50,6 +50,22 @@ func (r *PatchTaskRequest) Validate() error {
 	return nil
 }
 
+// PatchTask godoc
+// @Summary Изменение задачи
+// @Description Частичное изменение задачи по её ID. Непереданные поля сохраняют текущие значения.
+// @Description Поле description допускает null для удаления описания. Поля title и completed не допускают null.
+// @Description Длина title: от 1 до 100 символов; description: от 1 до 1000 символов, если передана строка.
+// @Tags tasks
+// @Accept json
+// @Produce json
+// @Param id path int true "ID изменяемой задачи"
+// @Param request body PatchTaskRequest true "Изменяемые поля задачи"
+// @Success 200 {object} PatchTaskResponse "Задача успешно изменена"
+// @Failure 400 {object} core_http_response.ErrorResponse "Bad Request"
+// @Failure 404 {object} core_http_response.ErrorResponse "Task Not Found"
+// @Failure 409 {object} core_http_response.ErrorResponse "Conflict"
+// @Failure 500 {object} core_http_response.ErrorResponse "Internal Server Error"
+// @Router /tasks/{id} [patch]
 func (h *TasksHTTPHandler) PatchTask(rw http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := core_logger.FromContext(ctx)
