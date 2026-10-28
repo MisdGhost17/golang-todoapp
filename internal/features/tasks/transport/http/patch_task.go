@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
+	core_auth "github.com/MisdGhost17/golang-todoapp/internal/core/auth"
+	core_errors "github.com/MisdGhost17/golang-todoapp/internal/core/errors"
+
 	"github.com/MisdGhost17/golang-todoapp/internal/core/domain"
 	core_logger "github.com/MisdGhost17/golang-todoapp/internal/core/logger"
 	core_http_request "github.com/MisdGhost17/golang-todoapp/internal/core/transport/http/request"
@@ -52,10 +55,11 @@ func (r *PatchTaskRequest) Validate() error {
 
 // PatchTask godoc
 // @Summary Изменение задачи
-// @Description Частичное изменение задачи по её ID. Непереданные поля сохраняют текущие значения.
+// @Description Частичное изменение своей задачи по ID. Для чужой или отсутствующей задачи возвращается 404. Непереданные поля сохраняют текущие значения.
 // @Description Поле description допускает null для удаления описания. Поля title и completed не допускают null.
 // @Description Длина title: от 1 до 100 символов; description: от 1 до 1000 символов, если передана строка.
 // @Tags tasks
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param id path int true "ID изменяемой задачи"
@@ -65,11 +69,17 @@ func (r *PatchTaskRequest) Validate() error {
 // @Failure 404 {object} core_http_response.ErrorResponse "Task Not Found"
 // @Failure 409 {object} core_http_response.ErrorResponse "Conflict"
 // @Failure 500 {object} core_http_response.ErrorResponse "Internal Server Error"
+// @Failure 401 {object} core_http_response.ErrorResponse "Unauthorized"
 // @Router /tasks/{id} [patch]
 func (h *TasksHTTPHandler) PatchTask(rw http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := core_logger.FromContext(ctx)
 	responseHandler := core_http_response.NewHTTPResponseHandler(log, rw)
+	userID, ok := core_auth.UserIDFromContext(ctx)
+	if !ok {
+		responseHandler.ErrorResponse(core_errors.ErrUnauthorized, "authentication required")
+		return
+	}
 
 	taskID, err := core_http_request.GetIntPathValue(r, "id")
 	if err != nil {
@@ -92,7 +102,7 @@ func (h *TasksHTTPHandler) PatchTask(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	taskPatch := taskPatchFromRequest(request)
-	taskDomain, err := h.tasksService.PatchTask(ctx, taskID, taskPatch)
+	taskDomain, err := h.tasksService.PatchTask(ctx, taskID, userID, taskPatch)
 	if err != nil {
 		responseHandler.ErrorResponse(
 			err,

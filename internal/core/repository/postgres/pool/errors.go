@@ -6,4 +6,5 @@ var (
 	ErrNoRows             = errors.New("no rows")
 	ErrViolatesForeignKey = errors.New("violates foreign key")
 	ErrUnkonw             = errors.New("unknown")
+	ErrViolatesUnique     = errors.New("violates unique constraint")
 )

@@ -12,7 +12,8 @@ type GetUserResponse UserDTOResponse
 
 // GetUser      godoc
 // @Summary     Получение пользователя
-// @Description Получение конкрентного пользователя по его ID
+// @Description Получение конкретного пользователя по его ID
+// @Description В текущей конфигурации маршрут доступен без JWT.
 // @Tags        users
 // @Produce     json
 // @Param       id path int true "ID пользователя"

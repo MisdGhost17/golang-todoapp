@@ -15,9 +15,226 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/auth/login": {
+            "post": {
+                "description": "Проверяет логин и пароль, создаёт новую сессию и выдаёт пару токенов. Access JWT действует 15 минут, refresh-сессия — 30 дней. Токены передаются в JSON, cookie не устанавливается. Для неизвестного логина и неверного пароля возвращается одинаковая ошибка.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Вход",
+                "parameters": [
+                    {
+                        "description": "Тело запроса",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_features_auth_transport_http.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Пара токенов",
+                        "schema": {
+                            "$ref": "#/definitions/internal_features_auth_transport_http.LoginResponse"
+                        },
+                        "headers": {
+                            "Cache-Control": {
+                                "type": "string",
+                                "description": "no-store"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Некорректный JSON",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Неверный логин или пароль",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/logout": {
+            "post": {
+                "description": "Отзывает сессию по refresh-токену, в том числе использованному. Access JWT не требуется. Повторный выход, неизвестный или некорректный токен возвращают 204. Уже выданный access JWT действует до истечения срока. Клиент должен удалить оба токена.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Выход из сессии",
+                "parameters": [
+                    {
+                        "description": "Тело запроса",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_features_auth_transport_http.LogoutRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Сессия отозвана или токен не найден; тело отсутствует",
+                        "headers": {
+                            "Cache-Control": {
+                                "type": "string",
+                                "description": "no-store"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Некорректный JSON",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Не удалось отозвать сессию",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/refresh": {
+            "post": {
+                "description": "Обменивает refresh-токен на новую пару. Access JWT не требуется. Старый refresh-токен становится использованным; повторное использование отзывает всю сессию. Срок сессии не продлевается. Не отправляйте параллельные запросы и не повторяйте запрос автоматически при потере ответа.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Обновление токенов",
+                "parameters": [
+                    {
+                        "description": "Тело запроса",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_features_auth_transport_http.RefreshRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Новая пара токенов",
+                        "schema": {
+                            "$ref": "#/definitions/internal_features_auth_transport_http.RefreshResponse"
+                        },
+                        "headers": {
+                            "Cache-Control": {
+                                "type": "string",
+                                "description": "no-store"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Некорректный JSON",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Токен недействителен, истёк, использован или сессия отозвана",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/register": {
+            "post": {
+                "description": "Создаёт профиль и данные входа атомарно. Логин нормализуется: пробелы по краям удаляются, регистр приводится к нижнему. Пароль: минимум 15 символов, максимум 72 байта. Токены не выдаются.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Регистрация",
+                "parameters": [
+                    {
+                        "description": "Тело запроса",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_features_auth_transport_http.RegisterRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Профиль создан",
+                        "schema": {
+                            "$ref": "#/definitions/internal_features_auth_transport_http.RegisterResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Некорректные данные",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Логин уже занят",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/statistics": {
             "get": {
-                "description": "Получение статистики задач с опциональными фильтрами по пользователю и периоду.",
+                "description": "Получение статистики задач с опциональными фильтрами по пользователю и периоду.\nВ текущей конфигурации JWT не требуется. Без user_id возвращается общая статистика.",
                 "produces": [
                     "application/json"
                 ],
@@ -35,14 +252,14 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "format": "date",
-                        "description": "Начало периода в формате YYYY-MM-DD",
+                        "description": "Начало периода по created_at включительно, YYYY-MM-DD",
                         "name": "from",
                         "in": "query"
                     },
                     {
                         "type": "string",
                         "format": "date",
-                        "description": "Конец периода в формате YYYY-MM-DD",
+                        "description": "Конец периода по created_at исключительно, YYYY-MM-DD; позже from",
                         "name": "to",
                         "in": "query"
                     }
@@ -71,7 +288,12 @@ const docTemplate = `{
         },
         "/tasks": {
             "get": {
-                "description": "Получение списка задач с опциональной фильтрацией по автору и пагинацией.",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Получение задач текущего пользователя с пагинацией. Параметр user_id игнорируется. Без limit возвращаются все свои задачи.",
                 "produces": [
                     "application/json"
                 ],
@@ -80,12 +302,6 @@ const docTemplate = `{
                 ],
                 "summary": "Получение списка задач",
                 "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "ID автора задач",
-                        "name": "user_id",
-                        "in": "query"
-                    },
                     {
                         "minimum": 0,
                         "type": "integer",
@@ -117,6 +333,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -126,7 +348,12 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Создание задачи для существующего пользователя.",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Создание задачи текущего пользователя. Автор определяется по JWT; author_user_id из тела запроса игнорируется.",
                 "consumes": [
                     "application/json"
                 ],
@@ -161,6 +388,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse"
+                        }
+                    },
                     "404": {
                         "description": "Author User Not Found",
                         "schema": {
@@ -178,7 +411,12 @@ const docTemplate = `{
         },
         "/tasks/{id}": {
             "get": {
-                "description": "Получение задачи по её ID.",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Получение своей задачи по ID. Для чужой или отсутствующей задачи возвращается 404.",
                 "produces": [
                     "application/json"
                 ],
@@ -208,6 +446,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse"
+                        }
+                    },
                     "404": {
                         "description": "Task Not Found",
                         "schema": {
@@ -223,7 +467,12 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Удаление существующей задачи по её ID.",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Удаление своей задачи по ID. Для чужой или отсутствующей задачи возвращается 404.",
                 "produces": [
                     "application/json"
                 ],
@@ -250,6 +499,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse"
+                        }
+                    },
                     "404": {
                         "description": "Task Not Found",
                         "schema": {
@@ -265,7 +520,12 @@ const docTemplate = `{
                 }
             },
             "patch": {
-                "description": "Частичное изменение задачи по её ID. Непереданные поля сохраняют текущие значения.\nПоле description допускает null для удаления описания. Поля title и completed не допускают null.\nДлина title: от 1 до 100 символов; description: от 1 до 1000 символов, если передана строка.",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Частичное изменение своей задачи по ID. Для чужой или отсутствующей задачи возвращается 404. Непереданные поля сохраняют текущие значения.\nПоле description допускает null для удаления описания. Поля title и completed не допускают null.\nДлина title: от 1 до 100 символов; description: от 1 до 1000 символов, если передана строка.",
                 "consumes": [
                     "application/json"
                 ],
@@ -307,6 +567,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse"
+                        }
+                    },
                     "404": {
                         "description": "Task Not Found",
                         "schema": {
@@ -330,7 +596,7 @@ const docTemplate = `{
         },
         "/users": {
             "get": {
-                "description": "Получение списка пользователей с опциональной пагинацией",
+                "description": "Получение списка пользователей с опциональной пагинацией\nВ текущей конфигурации маршрут доступен без JWT.",
                 "produces": [
                     "application/json"
                 ],
@@ -340,12 +606,14 @@ const docTemplate = `{
                 "summary": "Получение пользователей",
                 "parameters": [
                     {
+                        "minimum": 0,
                         "type": "integer",
-                        "description": "Размер страницы с пользователями",
+                        "description": "Размер страницы; без параметра возвращаются все пользователи",
                         "name": "limit",
                         "in": "query"
                     },
                     {
+                        "minimum": 0,
                         "type": "integer",
                         "description": "Смещение страницы с пользователями",
                         "name": "offset",
@@ -377,7 +645,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Создать нового пользователя в системе",
+                "description": "Создать профиль без логина и пароля. Для регистрации аккаунта используйте POST /auth/register.\nВ текущей конфигурации маршрут доступен без JWT.",
                 "consumes": [
                     "application/json"
                 ],
@@ -423,7 +691,7 @@ const docTemplate = `{
         },
         "/users/{id}": {
             "get": {
-                "description": "Получение конкрентного пользователя по его ID",
+                "description": "Получение конкретного пользователя по его ID\nВ текущей конфигурации маршрут доступен без JWT.",
                 "produces": [
                     "application/json"
                 ],
@@ -468,7 +736,10 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Удалить существующего пользователя по id",
+                "description": "Удалить существующего пользователя по id\nВ текущей конфигурации маршрут доступен без JWT.",
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "users"
                 ],
@@ -507,7 +778,7 @@ const docTemplate = `{
                 }
             },
             "patch": {
-                "description": "Изменение пользователя по ID\n### Логика обновления полей (Three-state logic):\n1. **Поле не передано**: ` + "`" + `phone_number` + "`" + ` игнорируется, значение в БД не изменяется\n2. **Явно передано значение**: ` + "`" + `phone_number` + "`" + ` значение в БД изменяется\n3. **Передан null**: ` + "`" + `phone_number` + "`" + ` значение в БД изменяется на NULL",
+                "description": "Изменение пользователя по ID\n### Логика обновления полей (Three-state logic):\n1. **Поле не передано**: ` + "`" + `phone_number` + "`" + ` игнорируется, значение в БД не изменяется\n2. **Явно передано значение**: ` + "`" + `phone_number` + "`" + ` значение в БД изменяется\n3. **Передан null**: ` + "`" + `phone_number` + "`" + ` значение в БД изменяется на NULL\nВ текущей конфигурации маршрут доступен без JWT.",
                 "consumes": [
                     "application/json"
                 ],
@@ -584,6 +855,123 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_features_auth_transport_http.LoginRequest": {
+            "type": "object",
+            "required": [
+                "login",
+                "password"
+            ],
+            "properties": {
+                "login": {
+                    "type": "string",
+                    "example": "auth_test"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "learning-go-auth-2026"
+                }
+            }
+        },
+        "internal_features_auth_transport_http.LoginResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "description": "AccessToken — JWT для заголовка Authorization: Bearer \u003caccess_token\u003e.",
+                    "type": "string"
+                },
+                "refresh_token": {
+                    "description": "RefreshToken — непрозрачный одноразовый токен: 43 символа Base64URL без padding.",
+                    "type": "string"
+                },
+                "token_type": {
+                    "type": "string",
+                    "example": "Bearer"
+                }
+            }
+        },
+        "internal_features_auth_transport_http.LogoutRequest": {
+            "type": "object",
+            "properties": {
+                "refresh_token": {
+                    "description": "RefreshToken — непрозрачный одноразовый токен: 43 символа Base64URL без padding.",
+                    "type": "string"
+                }
+            }
+        },
+        "internal_features_auth_transport_http.RefreshRequest": {
+            "type": "object",
+            "properties": {
+                "refresh_token": {
+                    "description": "RefreshToken — непрозрачный одноразовый токен: 43 символа Base64URL без padding.",
+                    "type": "string"
+                }
+            }
+        },
+        "internal_features_auth_transport_http.RefreshResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "description": "AccessToken — JWT для заголовка Authorization: Bearer \u003caccess_token\u003e.",
+                    "type": "string"
+                },
+                "refresh_token": {
+                    "description": "RefreshToken — непрозрачный одноразовый токен: 43 символа Base64URL без padding.",
+                    "type": "string"
+                },
+                "token_type": {
+                    "type": "string",
+                    "example": "Bearer"
+                }
+            }
+        },
+        "internal_features_auth_transport_http.RegisterRequest": {
+            "type": "object",
+            "required": [
+                "full_name",
+                "login",
+                "password"
+            ],
+            "properties": {
+                "full_name": {
+                    "type": "string",
+                    "example": "Ivan Petrov"
+                },
+                "login": {
+                    "type": "string",
+                    "example": "auth_test"
+                },
+                "password": {
+                    "description": "Password должен содержать минимум 15 символов и максимум 72 байта UTF-8.",
+                    "type": "string",
+                    "example": "learning-go-auth-2026"
+                },
+                "phone_number": {
+                    "type": "string",
+                    "example": "+79998887766"
+                }
+            }
+        },
+        "internal_features_auth_transport_http.RegisterResponse": {
+            "type": "object",
+            "properties": {
+                "full_name": {
+                    "type": "string",
+                    "example": "Ivan Petrov"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 42
+                },
+                "phone_number": {
+                    "type": "string",
+                    "example": "+79998887766"
+                },
+                "version": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
         "internal_features_statistics_transport_http.GetStatisticsResponse": {
             "type": "object",
             "properties": {
@@ -608,14 +996,9 @@ const docTemplate = `{
         "internal_features_tasks_transport_http.CreateTaskRequest": {
             "type": "object",
             "required": [
-                "author_user_id",
                 "title"
             ],
             "properties": {
-                "author_user_id": {
-                    "type": "integer",
-                    "example": 7
-                },
                 "description": {
                     "type": "string",
                     "maxLength": 1000,
@@ -911,6 +1294,14 @@ const docTemplate = `{
                     "example": 3
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Введите Bearer \u003caccess_token\u003e. Токен можно получить через POST /auth/login.",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`

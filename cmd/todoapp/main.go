@@ -13,6 +13,11 @@ import (
 	core_pgx_pool "github.com/MisdGhost17/golang-todoapp/internal/core/repository/postgres/pool/pgx"
 	core_http_middleware "github.com/MisdGhost17/golang-todoapp/internal/core/transport/http/middleware"
 	core_http_server "github.com/MisdGhost17/golang-todoapp/internal/core/transport/http/server"
+	auth_passwordhash "github.com/MisdGhost17/golang-todoapp/internal/features/auth/password_hash"
+	auth_postgres_repository "github.com/MisdGhost17/golang-todoapp/internal/features/auth/repository/postgres"
+	auth_service "github.com/MisdGhost17/golang-todoapp/internal/features/auth/service"
+	auth_token "github.com/MisdGhost17/golang-todoapp/internal/features/auth/token"
+	auth_transport_http "github.com/MisdGhost17/golang-todoapp/internal/features/auth/transport/http"
 	statistics_postgres_repository "github.com/MisdGhost17/golang-todoapp/internal/features/statistics/repository/postgres"
 	statistics_service "github.com/MisdGhost17/golang-todoapp/internal/features/statistics/service"
 	statistics_transport_http "github.com/MisdGhost17/golang-todoapp/internal/features/statistics/transport/http"
@@ -32,6 +37,10 @@ import (
 // @description  ToDo Application REST API
 // @host 		 127.0.0.1:5050
 // @BasePath 	 /api/v1
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Введите Bearer <access_token>. Токен можно получить через POST /auth/login.
 func main() {
 	cfg := core_config.NewConfigMust()
 	time.Local = cfg.TimeZone
@@ -79,6 +88,29 @@ func main() {
 	statisticsService := statistics_service.NewStatisticsService(statisticsRepository)
 	statisticsTransportHttp := statistics_transport_http.NewStatisticsHTTPHandler(statisticsService)
 
+	logger.Debug("initializing feature", zap.String("feature", "auth"))
+	tokenManager, err := auth_token.NewJWTManager(
+		[]byte(os.Getenv("JWT_SECRET")),
+		"todoapp",
+		15*time.Minute,
+	)
+	if err != nil {
+		logger.Fatal("failed to initialize JWT manager", zap.Error(err))
+	}
+
+	authRepository := auth_postgres_repository.NewAuthRepository(pool)
+	passwordHasher := auth_passwordhash.NewBcryptHasher()
+	refreshTokenManager := auth_token.NewRefreshTokenManager()
+
+	authService := auth_service.NewAuthService(
+		authRepository,
+		passwordHasher,
+		tokenManager,
+		refreshTokenManager,
+	)
+
+	authTransportHTTP := auth_transport_http.NewAuthHTTPHandler(authService)
+
 	logger.Debug("initializing HTTP server")
 
 	httpServer := core_http_server.NewHTTPServer(
@@ -92,8 +124,19 @@ func main() {
 	)
 	apiVersionRouterV1 := core_http_server.NewAPIVersionRouter(core_http_server.ApiVersion1)
 	apiVersionRouterV1.RegisterRoutes(usersTransportHttp.Routes()...)
-	apiVersionRouterV1.RegisterRoutes(taskTransportHttp.Routes()...)
+	apiVersionRouterV1.RegisterRoutes(authTransportHTTP.Routes()...)
 	apiVersionRouterV1.RegisterRoutes(statisticsTransportHttp.Routes()...)
+	requireAuth := core_http_middleware.RequireAuth(tokenManager)
+
+	taskRoutes := taskTransportHttp.Routes()
+	for i := range taskRoutes {
+		taskRoutes[i].Middleware = append(
+			[]core_http_middleware.Middleware{requireAuth},
+			taskRoutes[i].Middleware...,
+		)
+	}
+
+	apiVersionRouterV1.RegisterRoutes(taskRoutes...)
 
 	// apiVersionRouterV2 := core_http_server.NewAPIVersionRouter(
 	// 	core_http_server.ApiVersion2,

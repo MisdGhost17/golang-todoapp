@@ -14,11 +14,12 @@ type GetUsersResponse []UserDTOResponse
 // GetUsers      godoc
 // @Summary      Получение пользователей
 // @Description  Получение списка пользователей с опциональной пагинацией
+// @Description В текущей конфигурации маршрут доступен без JWT.
 // @Tags         users
 // @Produce 	 json
-// @Param 		 limit query int false "Размер страницы с пользователями"
-// @Param 		 offset query int false "Смещение страницы с пользователями"
-// @Success 	 200 {object} GetUsersResponse "Успешное получение списка пользователей"
+// @Param 		 limit query int false "Размер страницы; без параметра возвращаются все пользователи" minimum(0)
+// @Param 		 offset query int false "Смещение страницы с пользователями" minimum(0)
+// @Success 	 200 {array} UserDTOResponse "Успешное получение списка пользователей"
 // @Failure 	 400 {object} core_http_response.ErrorResponse "Bad Request"
 // @Failure 	 500 {object} core_http_response.ErrorResponse "Internal Server Error"
 // @Router 	 	 /users [get]

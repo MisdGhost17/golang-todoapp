@@ -20,7 +20,7 @@ type TaskService interface {
 
 	GetTasks(
 		ctx context.Context,
-		userID *int,
+		userID int,
 		limit *int,
 		offset *int,
 	) ([]domain.Task, error)
@@ -28,16 +28,19 @@ type TaskService interface {
 	GetTask(
 		ctx context.Context,
 		taskID int,
+		userID int,
 	) (domain.Task, error)
 
 	DeleteTask(
 		ctx context.Context,
 		taskID int,
+		userID int,
 	) error
 
 	PatchTask(
 		ctx context.Context,
 		taskID int,
+		userID int,
 		taskPatch domain.TaskPatch,
 	) (domain.Task, error)
 }

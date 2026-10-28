@@ -54,6 +54,7 @@ type PatchUserResponse UserDTOResponse
 // @Description  1. **Поле не передано**: `phone_number` игнорируется, значение в БД не изменяется
 // @Description  2. **Явно передано значение**: `phone_number` значение в БД изменяется
 // @Description  3. **Передан null**: `phone_number` значение в БД изменяется на NULL
+// @Description В текущей конфигурации маршрут доступен без JWT.
 // @Tags         users
 // @Accept 		 json
 // @Produce 	 json

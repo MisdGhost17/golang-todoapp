@@ -18,7 +18,8 @@ type CreateUserResponse UserDTOResponse
 
 // CreateUser godoc
 // @Summary      Создать пользователя
-// @Description  Создать нового пользователя в системе
+// @Description  Создать профиль без логина и пароля. Для регистрации аккаунта используйте POST /auth/register.
+// @Description В текущей конфигурации маршрут доступен без JWT.
 // @Tags 		 users
 // @Accept 		 json
 // @Produce 	 json

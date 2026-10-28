@@ -21,11 +21,12 @@ type GetStatisticsResponse struct {
 // GetStatistics godoc
 // @Summary Получение статистики задач
 // @Description Получение статистики задач с опциональными фильтрами по пользователю и периоду.
+// @Description В текущей конфигурации JWT не требуется. Без user_id возвращается общая статистика.
 // @Tags statistics
 // @Produce json
 // @Param user_id query int false "ID пользователя"
-// @Param from query string false "Начало периода в формате YYYY-MM-DD" Format(date)
-// @Param to query string false "Конец периода в формате YYYY-MM-DD" Format(date)
+// @Param from query string false "Начало периода по created_at включительно, YYYY-MM-DD" Format(date)
+// @Param to query string false "Конец периода по created_at исключительно, YYYY-MM-DD; позже from" Format(date)
 // @Success 200 {object} GetStatisticsResponse "Статистика задач"
 // @Failure 400 {object} core_http_response.ErrorResponse "Bad Request"
 // @Failure 500 {object} core_http_response.ErrorResponse "Internal Server Error"
