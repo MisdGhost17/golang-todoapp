@@ -5,6 +5,13 @@ import (
 	"time"
 )
 
+type Tx interface {
+	QueryRow(ctx context.Context, sql string, args ...any) Row
+	Exec(ctx context.Context, sql string, args ...any) (CommandTag, error)
+	Commit(ctx context.Context) error
+	Rollback(ctx context.Context) error
+}
+
 type Pool interface {
 	Query(ctx context.Context, sql string, args ...any) (Rows, error)
 	QueryRow(ctx context.Context, sql string, args ...any) Row
@@ -12,6 +19,7 @@ type Pool interface {
 	Close()
 
 	OpTimeout() time.Duration
+	Begin(ctx context.Context) (Tx, error)
 }
 
 type Rows interface {

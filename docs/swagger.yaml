@@ -8,6 +8,94 @@ definitions:
       message:
         type: string
     type: object
+  internal_features_auth_transport_http.LoginRequest:
+    properties:
+      login:
+        example: auth_test
+        type: string
+      password:
+        example: learning-go-auth-2026
+        type: string
+    required:
+    - login
+    - password
+    type: object
+  internal_features_auth_transport_http.LoginResponse:
+    properties:
+      access_token:
+        description: 'AccessToken — JWT для заголовка Authorization: Bearer <access_token>.'
+        type: string
+      refresh_token:
+        description: 'RefreshToken — непрозрачный одноразовый токен: 43 символа Base64URL
+          без padding.'
+        type: string
+      token_type:
+        example: Bearer
+        type: string
+    type: object
+  internal_features_auth_transport_http.LogoutRequest:
+    properties:
+      refresh_token:
+        description: 'RefreshToken — непрозрачный одноразовый токен: 43 символа Base64URL
+          без padding.'
+        type: string
+    type: object
+  internal_features_auth_transport_http.RefreshRequest:
+    properties:
+      refresh_token:
+        description: 'RefreshToken — непрозрачный одноразовый токен: 43 символа Base64URL
+          без padding.'
+        type: string
+    type: object
+  internal_features_auth_transport_http.RefreshResponse:
+    properties:
+      access_token:
+        description: 'AccessToken — JWT для заголовка Authorization: Bearer <access_token>.'
+        type: string
+      refresh_token:
+        description: 'RefreshToken — непрозрачный одноразовый токен: 43 символа Base64URL
+          без padding.'
+        type: string
+      token_type:
+        example: Bearer
+        type: string
+    type: object
+  internal_features_auth_transport_http.RegisterRequest:
+    properties:
+      full_name:
+        example: Ivan Petrov
+        type: string
+      login:
+        example: auth_test
+        type: string
+      password:
+        description: Password должен содержать минимум 15 символов и максимум 72 байта
+          UTF-8.
+        example: learning-go-auth-2026
+        type: string
+      phone_number:
+        example: "+79998887766"
+        type: string
+    required:
+    - full_name
+    - login
+    - password
+    type: object
+  internal_features_auth_transport_http.RegisterResponse:
+    properties:
+      full_name:
+        example: Ivan Petrov
+        type: string
+      id:
+        example: 42
+        type: integer
+      phone_number:
+        example: "+79998887766"
+        type: string
+      version:
+        example: 1
+        type: integer
+    type: object
   internal_features_statistics_transport_http.GetStatisticsResponse:
     properties:
       tasks_average_completion_time:
@@ -25,9 +113,6 @@ definitions:
     type: object
   internal_features_tasks_transport_http.CreateTaskRequest:
     properties:
-      author_user_id:
-        example: 7
-        type: integer
       description:
         example: Молоко и хлеб
         maxLength: 1000
@@ -39,7 +124,6 @@ definitions:
         minLength: 1
         type: string
     required:
-    - author_user_id
     - title
     type: object
   internal_features_tasks_transport_http.CreateTaskResponse:
@@ -253,21 +337,176 @@ info:
   title: Golang ToDo API
   version: "1.0"
 paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Проверяет логин и пароль, создаёт новую сессию и выдаёт пару токенов.
+        Access JWT действует 15 минут, refresh-сессия — 30 дней. Токены передаются
+        в JSON, cookie не устанавливается. Для неизвестного логина и неверного пароля
+        возвращается одинаковая ошибка.
+      parameters:
+      - description: Тело запроса
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_features_auth_transport_http.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Пара токенов
+          headers:
+            Cache-Control:
+              description: no-store
+              type: string
+          schema:
+            $ref: '#/definitions/internal_features_auth_transport_http.LoginResponse'
+        "400":
+          description: Некорректный JSON
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+        "401":
+          description: Неверный логин или пароль
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+      summary: Вход
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Отзывает сессию по refresh-токену, в том числе использованному.
+        Access JWT не требуется. Повторный выход, неизвестный или некорректный токен
+        возвращают 204. Уже выданный access JWT действует до истечения срока. Клиент
+        должен удалить оба токена.
+      parameters:
+      - description: Тело запроса
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_features_auth_transport_http.LogoutRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Сессия отозвана или токен не найден; тело отсутствует
+          headers:
+            Cache-Control:
+              description: no-store
+              type: string
+        "400":
+          description: Некорректный JSON
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+        "500":
+          description: Не удалось отозвать сессию
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+      summary: Выход из сессии
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Обменивает refresh-токен на новую пару. Access JWT не требуется.
+        Старый refresh-токен становится использованным; повторное использование отзывает
+        всю сессию. Срок сессии не продлевается. Не отправляйте параллельные запросы
+        и не повторяйте запрос автоматически при потере ответа.
+      parameters:
+      - description: Тело запроса
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_features_auth_transport_http.RefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Новая пара токенов
+          headers:
+            Cache-Control:
+              description: no-store
+              type: string
+          schema:
+            $ref: '#/definitions/internal_features_auth_transport_http.RefreshResponse'
+        "400":
+          description: Некорректный JSON
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+        "401":
+          description: Токен недействителен, истёк, использован или сессия отозвана
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+      summary: Обновление токенов
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: 'Создаёт профиль и данные входа атомарно. Логин нормализуется:
+        пробелы по краям удаляются, регистр приводится к нижнему. Пароль: минимум
+        15 символов, максимум 72 байта. Токены не выдаются.'
+      parameters:
+      - description: Тело запроса
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_features_auth_transport_http.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Профиль создан
+          schema:
+            $ref: '#/definitions/internal_features_auth_transport_http.RegisterResponse'
+        "400":
+          description: Некорректные данные
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+        "409":
+          description: Логин уже занят
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+      summary: Регистрация
+      tags:
+      - auth
   /statistics:
     get:
-      description: Получение статистики задач с опциональными фильтрами по пользователю
-        и периоду.
+      description: |-
+        Получение статистики задач с опциональными фильтрами по пользователю и периоду.
+        В текущей конфигурации JWT не требуется. Без user_id возвращается общая статистика.
       parameters:
       - description: ID пользователя
         in: query
         name: user_id
         type: integer
-      - description: Начало периода в формате YYYY-MM-DD
+      - description: Начало периода по created_at включительно, YYYY-MM-DD
         format: date
         in: query
         name: from
         type: string
-      - description: Конец периода в формате YYYY-MM-DD
+      - description: Конец периода по created_at исключительно, YYYY-MM-DD; позже
+          from
         format: date
         in: query
         name: to
@@ -292,12 +531,9 @@ paths:
       - statistics
   /tasks:
     get:
-      description: Получение списка задач с опциональной фильтрацией по автору и пагинацией.
+      description: Получение задач текущего пользователя с пагинацией. Параметр user_id
+        игнорируется. Без limit возвращаются все свои задачи.
       parameters:
-      - description: ID автора задач
-        in: query
-        name: user_id
-        type: integer
       - description: Максимальное количество задач
         in: query
         minimum: 0
@@ -321,17 +557,24 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Получение списка задач
       tags:
       - tasks
     post:
       consumes:
       - application/json
-      description: Создание задачи для существующего пользователя.
+      description: Создание задачи текущего пользователя. Автор определяется по JWT;
+        author_user_id из тела запроса игнорируется.
       parameters:
       - description: Данные новой задачи
         in: body
@@ -350,6 +593,10 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
         "404":
           description: Author User Not Found
           schema:
@@ -358,12 +605,15 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Создание задачи
       tags:
       - tasks
   /tasks/{id}:
     delete:
-      description: Удаление существующей задачи по её ID.
+      description: Удаление своей задачи по ID. Для чужой или отсутствующей задачи
+        возвращается 404.
       parameters:
       - description: ID удаляемой задачи
         in: path
@@ -379,6 +629,10 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
         "404":
           description: Task Not Found
           schema:
@@ -387,11 +641,14 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Удаление задачи
       tags:
       - tasks
     get:
-      description: Получение задачи по её ID.
+      description: Получение своей задачи по ID. Для чужой или отсутствующей задачи
+        возвращается 404.
       parameters:
       - description: ID задачи
         in: path
@@ -409,6 +666,10 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
         "404":
           description: Task Not Found
           schema:
@@ -417,6 +678,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Получение задачи
       tags:
       - tasks
@@ -424,7 +687,7 @@ paths:
       consumes:
       - application/json
       description: |-
-        Частичное изменение задачи по её ID. Непереданные поля сохраняют текущие значения.
+        Частичное изменение своей задачи по ID. Для чужой или отсутствующей задачи возвращается 404. Непереданные поля сохраняют текущие значения.
         Поле description допускает null для удаления описания. Поля title и completed не допускают null.
         Длина title: от 1 до 100 символов; description: от 1 до 1000 символов, если передана строка.
       parameters:
@@ -450,6 +713,10 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
         "404":
           description: Task Not Found
           schema:
@@ -462,19 +729,25 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/github_com_MisdGhost17_golang-todoapp_internal_core_transport_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Изменение задачи
       tags:
       - tasks
   /users:
     get:
-      description: Получение списка пользователей с опциональной пагинацией
+      description: |-
+        Получение списка пользователей с опциональной пагинацией
+        В текущей конфигурации маршрут доступен без JWT.
       parameters:
-      - description: Размер страницы с пользователями
+      - description: Размер страницы; без параметра возвращаются все пользователи
         in: query
+        minimum: 0
         name: limit
         type: integer
       - description: Смещение страницы с пользователями
         in: query
+        minimum: 0
         name: offset
         type: integer
       produces:
@@ -500,7 +773,9 @@ paths:
     post:
       consumes:
       - application/json
-      description: Создать нового пользователя в системе
+      description: |-
+        Создать профиль без логина и пароля. Для регистрации аккаунта используйте POST /auth/register.
+        В текущей конфигурации маршрут доступен без JWT.
       parameters:
       - description: CreateUser тело запроса
         in: body
@@ -528,13 +803,17 @@ paths:
       - users
   /users/{id}:
     delete:
-      description: Удалить существующего пользователя по id
+      description: |-
+        Удалить существующего пользователя по id
+        В текущей конфигурации маршрут доступен без JWT.
       parameters:
       - description: ID удаляемого пользователя
         in: path
         name: id
         required: true
         type: integer
+      produces:
+      - application/json
       responses:
         "204":
           description: Успешное удаление пользователя
@@ -554,7 +833,9 @@ paths:
       tags:
       - users
     get:
-      description: Получение конкрентного пользователя по его ID
+      description: |-
+        Получение конкретного пользователя по его ID
+        В текущей конфигурации маршрут доступен без JWT.
       parameters:
       - description: ID пользователя
         in: path
@@ -592,6 +873,7 @@ paths:
         1. **Поле не передано**: `phone_number` игнорируется, значение в БД не изменяется
         2. **Явно передано значение**: `phone_number` значение в БД изменяется
         3. **Передан null**: `phone_number` значение в БД изменяется на NULL
+        В текущей конфигурации маршрут доступен без JWT.
       parameters:
       - description: ID изменяемого пользователя
         in: path
@@ -630,4 +912,10 @@ paths:
       summary: Изменение пользователя
       tags:
       - users
+securityDefinitions:
+  BearerAuth:
+    description: Введите Bearer <access_token>. Токен можно получить через POST /auth/login.
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

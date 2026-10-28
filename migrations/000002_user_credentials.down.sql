@@ -1,0 +1,1 @@
+DROP TABLE todoapp.user_credentials;

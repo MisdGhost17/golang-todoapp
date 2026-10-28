@@ -11,6 +11,8 @@ import (
 // DeleteUser 	 godoc
 // @Summary      Удаление пользователя
 // @Description  Удалить существующего пользователя по id
+// @Description В текущей конфигурации маршрут доступен без JWT.
+// @Produce json
 // @Tags 		 users
 // @Param        id path int true "ID удаляемого пользователя"
 // @Success      204 "Успешное удаление пользователя"
